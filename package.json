@@ -1,0 +1,32 @@
+{
+  "name": "paas",
+  "version": "1.0.0",
+  "description": "puppeteer as a service",
+  "main": "index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "test": "test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/alex-weber/paas.git"
+  },
+  "keywords": [
+    "puppeteer",
+    "paas"
+  ],
+  "author": "tortunbator",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/alex-weber/paas/issues"
+  },
+  "homepage": "https://github.com/alex-weber/paas#readme",
+  "dependencies": {
+    "axios": "1.9.0",
+    "express": "^4.21.2",
+    "express-session": "^1.18.1",
+    "node": "^22.9.0",
+    "npm": "^10.9.2",
+    "puppeteer": "^22.15.0"
+  }
+}
