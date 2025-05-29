@@ -10,6 +10,9 @@ app.use('/public', express.static(path.join(__dirname, 'tmp')))
 app.get('/screenshot', async (req, res) => {
 
     const { apiKey, hash } = req.query
+    const rawUrl = req.originalUrl
+    const match = rawUrl.match(/[?&]hash=([^&]+)/)
+    const rawHash = match ? match[1] : null
 
     if (!apiKey || apiKey !== process.env.API_KEY) {
         res.send('API key missing or wrong')
@@ -21,9 +24,9 @@ app.get('/screenshot', async (req, res) => {
 
         return
     }
-    const deckBuilderLink = 'https://www.kards.com/decks/deck-builder/?hash=%25%25'
-    console.log(deckBuilderLink+encodeURIComponent(hash))
-    takeScreenshot(deckBuilderLink+encodeURIComponent(hash)).then(result => {
+    const deckBuilderLink = 'https://www.kards.com/decks/deck-builder?hash='
+    console.log(deckBuilderLink+rawHash)
+    takeScreenshot(deckBuilderLink+rawHash).then(result => {
         if (!result) res.send('something went wrong')
         else {
             const files = [
