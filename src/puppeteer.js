@@ -9,6 +9,7 @@ const path = require('path')
 async function saveScreenshot(page, selector) {
 
     const outputPath = path.join(__dirname, 'tmp', 'deckScreenshot')
+    console.log('outputPath:', outputPath)
     // Get the bounding box of the element
     const elementHandle = await page.$(selector)
     const boundingBox = await elementHandle.boundingBox()
