@@ -53,10 +53,6 @@ async function saveScreenshot(page, selector) {
  */
 async function takeScreenshot(url) {
 
-    function waitFor(milliseconds) {
-        return new Promise(resolve => setTimeout(resolve, milliseconds))
-    }
-
     const options = { waitUntil: 'networkidle2' }
     const selector = '.Sidebar_side__scroll__xZp3s'
     const launchOptions =  {
@@ -64,7 +60,13 @@ async function takeScreenshot(url) {
             '--no-sandbox',
             '--disable-setuid-sandbox',
             '--no-zygote',
+            '--window-size=1920,2000'
         ],
+        defaultViewport: {
+            width: 1920,
+            height: 2000,
+            deviceScaleFactor: 1 // Important for 100% rendering
+        },
         headless: true,
         devtools: false,
         ignoreDefaultArgs: ['--disable-extensions']
@@ -75,8 +77,8 @@ async function takeScreenshot(url) {
         console.log('setting PATH_TO_CHROME to ', process.env.PATH_TO_CHROME)
     }
     const browser = await puppeteer.launch(launchOptions)
-    let page = await browser.newPage()
-    await page.setViewport({ width: 3000, height:2000 })
+    const page = await browser.newPage()
+    await page.setViewport({ width: 1920, height:2000 })
     console.time('pageLoading')
     try {
         const response = await page.goto(url, options)
@@ -90,11 +92,11 @@ async function takeScreenshot(url) {
         return false
     }
 
-    await waitFor(700)
+    //await waitFor(700)
     console.timeEnd('pageLoading')
     try {
         // Wait for the element to appear
-        await page.waitForSelector(selector, { timeout: 5000 })
+        await page.waitForSelector(selector, { timeout: 3000 })
         await saveScreenshot(page, selector)
         await browser.close()
 
