@@ -25,7 +25,7 @@ app.get('/screenshot', async (req, res) => {
         return
     }
     const deckBuilderLink = 'https://www.kards.com/decks/deck-builder?hash='
-    console.log(deckBuilderLink+rawHash)
+    console.log(rawHash)
     takeScreenshot(deckBuilderLink+rawHash).then(result => {
         if (!result) res.send('something went wrong')
         else {

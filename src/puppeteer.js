@@ -1,5 +1,5 @@
 const puppeteer = require('puppeteer')
-
+const path = require('path')
 /**
  *
  * @param page
@@ -8,7 +8,7 @@ const puppeteer = require('puppeteer')
  */
 async function saveScreenshot(page, selector) {
 
-    const outputPath = __dirname+'/tmp/deckScreenshot'
+    const outputPath = path.join(__dirname, 'tmp', 'deckScreenshot')
     // Get the bounding box of the element
     const elementHandle = await page.$(selector)
     const boundingBox = await elementHandle.boundingBox()
