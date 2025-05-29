@@ -1,5 +1,6 @@
 const puppeteer = require('puppeteer')
 const path = require('path')
+const fs = require("fs")
 /**
  *
  * @param page
@@ -8,7 +9,12 @@ const path = require('path')
  */
 async function saveScreenshot(page, selector) {
 
-    const outputPath = path.join(__dirname, 'tmp', 'deckScreenshot')
+    const tmpDir = path.join(__dirname, 'tmp')
+    if (!fs.existsSync(tmpDir)) {
+        fs.mkdirSync(tmpDir)
+    }
+
+    const outputPath = path.join(tmpDir, 'deckScreenshot')
     console.log('outputPath:', outputPath)
     // Get the bounding box of the element
     const elementHandle = await page.$(selector)
@@ -97,7 +103,9 @@ async function takeScreenshot(url) {
     console.timeEnd('pageLoading')
     try {
         // Wait for the element to appear
+        console.log('waiting for selector')
         await page.waitForSelector(selector, { timeout: 3000 })
+        console.log('selector found')
         await saveScreenshot(page, selector)
         await browser.close()
 
