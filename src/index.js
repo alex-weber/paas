@@ -2,12 +2,15 @@ const express = require('express')
 const puppeteer = require('puppeteer')
 const { v4: uuidv4 } = require('uuid')
 
+require('dotenv').config()
 const app = express()
 const PORT = process.env.PORT || 3030
 const MAX_CONCURRENT_SESSIONS = 5
 
 const sessions = new Map()
 const queue = []
+
+const API_KEY = process.env.API_KEY || false
 
 async function launchBrowser() {
     return await puppeteer.launch({
@@ -63,6 +66,12 @@ function cleanupSessions() {
 setInterval(cleanupSessions, 10 * 1000) // clean every 10 sec
 
 app.get('/start', async (req, res) => {
+
+    if (!API_KEY || API_KEY !== req.query.token)
+    {
+        console.log('Invalid or missing API token')
+        return res.status(401).json({ error: 'Invalid or missing API token' })
+    }
     try {
         await createSession(res)
     } catch (err) {
