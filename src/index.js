@@ -1,46 +1,80 @@
-require('dotenv').config()
 const express = require('express')
-const {takeScreenshot} = require("./puppeteer")
-const path = require('path')
+const puppeteer = require('puppeteer')
+const { v4: uuidv4 } = require('uuid')
 
 const app = express()
-const port = process.env.PORT || 3000
-app.use('/public', express.static(path.join(__dirname, 'tmp')))
+const PORT = process.env.PORT || 3030
+const MAX_CONCURRENT_SESSIONS = 5
 
-app.get('/screenshot', async (req, res) => {
+const sessions = new Map()
+const queue = []
 
-    const { apiKey, hash } = req.query
-    const rawUrl = req.originalUrl
-    const match = rawUrl.match(/[?&]hash=([^&]+)/)
-    const rawHash = match ? match[1] : null
-
-    if (!apiKey || apiKey !== process.env.API_KEY) {
-        res.send('API key missing or wrong')
-
-        return
-    }
-    if (!hash || hash.length < 15) {
-        res.send('Hash missing or wrong')
-
-        return
-    }
-    const deckBuilderLink = 'https://www.kards.com/decks/deck-builder?hash='
-    console.log(rawHash)
-    takeScreenshot(deckBuilderLink+rawHash).then(result => {
-        if (!result) res.send('something went wrong')
-        else {
-            const files = [
-                `${req.protocol}://${req.get('host')}/public/deckScreenshot.webp`,
-                `${req.protocol}://${req.get('host')}/public/deckScreenshot2.webp`,
-            ]
-            res.json(files)
-        }
+async function launchBrowser() {
+    return await puppeteer.launch({
+        headless: true,
+        args: ['--no-sandbox', '--disable-setuid-sandbox']
     })
+}
 
+async function createSession(res) {
+    if (sessions.size >= MAX_CONCURRENT_SESSIONS) {
+        console.log('Session queue full, queuing request')
+        queue.push(() => createSession(res))
+        return
+    }
+
+    const browser = await launchBrowser()
+    const sessionId = uuidv4()
+    const browserWSEndpoint = browser.wsEndpoint()
+    const expiresAt = Date.now() + 5 * 60 * 1000 // 5 min
+
+    sessions.set(sessionId, { browser, expiresAt })
+
+    console.log(`Session ${sessionId} started`)
+
+    res.json({ browserWSEndpoint, sessionId, expiresAt })
+
+    browser.on('disconnected', () => {
+        console.log(`Browser for session ${sessionId} disconnected`)
+        sessions.delete(sessionId)
+        runNextInQueue()
+    })
+}
+
+function runNextInQueue() {
+    if (queue.length > 0 && sessions.size < MAX_CONCURRENT_SESSIONS) {
+        const next = queue.shift()
+        if (typeof next === 'function') next()
+    }
+}
+
+function cleanupSessions() {
+    const now = Date.now()
+    for (const [id, { browser, expiresAt }] of sessions.entries()) {
+        if (now > expiresAt) {
+            console.log(`Session ${id} expired`)
+            browser.close().catch(() => {})
+            sessions.delete(id)
+            runNextInQueue()
+        }
+    }
+}
+
+setInterval(cleanupSessions, 10 * 1000) // clean every 10 sec
+
+app.get('/start', async (req, res) => {
+    try {
+        await createSession(res)
+    } catch (err) {
+        console.error(err)
+        res.status(500).send('Failed to start session')
+    }
 })
 
-app.get('/', async (req, res) => {
-    res.send('hello mf')
+app.get('/', (req, res) => {
+    res.send('Puppeteer WebSocket Service is running')
 })
 
-app.listen(port, () => console.log(`PAAS is listening at :${port}`))
+app.listen(PORT, () => {
+    console.log(`Puppeteer service listening on http://localhost:${PORT}`)
+})
